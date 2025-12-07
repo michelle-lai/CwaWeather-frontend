@@ -105,6 +105,17 @@
             position: relative;
         }
 
+        /* 吉伊在今日卡片右上角 */
+        .chiikawa-hero {
+            position: absolute;
+            top: 15px; /* 稍微往下調整 */
+            right: 20px;
+            width: 80px; /* 調整大小 */
+            height: auto;
+            transform: rotate(5deg);
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+        }
+
         /* 像吉伊卡哇對話框的氣泡 */
         .hero-period {
             position: absolute;
@@ -183,6 +194,7 @@
             border: 2px solid var(--ac-dark);
             box-shadow: 0 4px 0 var(--ac-card-border);
             transition: transform 0.2s;
+            position: relative; /* 為了小八定位 */
         }
         
         /* 增加點擊感 */
@@ -190,6 +202,19 @@
             transform: translateY(2px);
             box-shadow: 0 2px 0 var(--ac-card-border);
         }
+
+        /* 小八在建議卡片旁邊 */
+        .hachiware-advice {
+            position: absolute;
+            bottom: -20px; /* 稍微往下露出頭 */
+            right: -10px;
+            width: 70px;
+            height: auto;
+            transform: rotate(-8deg);
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+            z-index: 1; /* 確保在卡片之上 */
+        }
+
 
         .advice-icon {
             font-size: 2.5rem;
@@ -240,7 +265,21 @@
             border: 3px solid var(--ac-card-border);
             box-shadow: 0 5px 0 var(--ac-dark);
             flex-shrink: 0;
+            position: relative; /* 為了烏薩琪定位 */
         }
+
+        /* 烏薩琪在迷你卡片底部 */
+        .usagi-mini {
+            position: absolute;
+            bottom: -25px; /* 稍微往下露出頭 */
+            left: 50%;
+            transform: translateX(-50%) rotate(3deg);
+            width: 75px;
+            height: auto;
+            filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.1));
+            z-index: 1;
+        }
+
 
         .mini-time {
             background: var(--ac-pink);
@@ -336,6 +375,11 @@
             return "🌤️";
         }
 
+        // 隨機選擇烏薩琪出現的頻率 (例如每2個卡片出現一次)
+        function shouldShowUsagi() {
+            return Math.random() < 0.5; // 50% 的機率顯示
+        }
+
         function getAdvice(rainProb, maxTemp) {
             let rainIcon = "💧";
             let rainText = "不用帶傘";
@@ -371,7 +415,7 @@
             const current = forecasts[0];
             const others = forecasts.slice(1);
 
-            // 1. 渲染 Hero Card (主畫面)
+            // 1. 渲染 Hero Card (主畫面) - 加入吉伊
             const advice = getAdvice(current.rain, current.maxTemp);
             const period = getTimePeriod(current.startTime);
             const avgTemp = Math.round((parseInt(current.maxTemp) + parseInt(current.minTemp)) / 2);
@@ -379,6 +423,7 @@
             document.getElementById('heroCard').innerHTML = `
                 <div class="hero-card">
                     <div class="hero-period">${period}的吉伊卡哇</div>
+                    <img src="./images/chiikawa.png" alt="Chiikawa" class="chiikawa-hero">
                     <div class="hero-temp-container">
                         <div class="hero-icon">${getWeatherIcon(current.weather)}</div>
                         <div class="hero-temp">${avgTemp}°</div>
@@ -394,67 +439,4 @@
                         <div class="advice-item">
                             <div class="advice-icon">${advice.clothIcon}</div>
                             <div class="advice-text">${advice.clothText}</div>
-                            <div style="font-size:0.8rem; color:var(--ac-brown); font-weight: bold;">最高溫 ${current.maxTemp}°C</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // 2. 渲染稍後預報
-            const scrollContainer = document.getElementById('futureForecasts');
-            scrollContainer.innerHTML = '';
-
-            const todayDate = new Date().getDate();
-
-            others.forEach(f => {
-                let p = getTimePeriod(f.startTime);
-
-                const fDate = new Date(f.startTime);
-                if (fDate.getDate() !== todayDate) {
-                    p = "明天" + p;
-                }
-
-                scrollContainer.innerHTML += `
-                    <div class="mini-card">
-                        <div class="mini-time">${p}</div>
-                        <div class="mini-icon">${getWeatherIcon(f.weather)}</div>
-                        <div class="mini-temp">${f.minTemp}° - ${f.maxTemp}°</div>
-                        <div style="font-size:0.9rem; color:var(--ac-dark); margin-top:5px; font-weight: bold;">💧${f.rain}%</div>
-                    </div>
-                `;
-            });
-
-            // 3. 右上角顯示今日日期
-            const now = new Date();
-            const month = now.getMonth() + 1;
-            const date = now.getDate();
-            const dayIndex = now.getDay();
-            const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
-
-            document.getElementById('updateTime').textContent = `${month}/${date} ${days[dayIndex]}`;
-        }
-
-        async function fetchWeather() {
-            try {
-                const delayPromise = new Promise(resolve => setTimeout(resolve, 1500));
-                const fetchPromise = fetch(API_URL).then(res => res.json());
-                const [_, json] = await Promise.all([delayPromise, fetchPromise]);
-
-                if (json.success) {
-                    renderWeather(json.data);
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('mainContent').style.display = 'block';
-                } else {
-                    throw new Error("API Error");
-                }
-            } catch (e) {
-                console.error(e);
-                alert("天氣資料讀取失敗，可能是討伐魔物時網路線被剪斷了！");
-            }
-        }
-
-        document.addEventListener("DOMContentLoaded", fetchWeather);
-    </script>
-</body>
-
-</html>
+                            <div style="font-size:0.8
