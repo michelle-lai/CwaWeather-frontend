@@ -439,4 +439,72 @@
                         <div class="advice-item">
                             <div class="advice-icon">${advice.clothIcon}</div>
                             <div class="advice-text">${advice.clothText}</div>
-                            <div style="font-size:0.8
+                            <div style="font-size:0.8rem; color:var(--ac-brown); font-weight: bold;">最高溫 ${current.maxTemp}°C</div>
+                            <img src="./images/hachiware.png" alt="Hachiware" class="hachiware-advice">
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 2. 渲染稍後預報 - 加入烏薩琪
+            const scrollContainer = document.getElementById('futureForecasts');
+            scrollContainer.innerHTML = '';
+
+            const todayDate = new Date().getDate();
+
+            others.forEach(f => {
+                let p = getTimePeriod(f.startTime);
+
+                const fDate = new Date(f.startTime);
+                if (fDate.getDate() !== todayDate) {
+                    p = "明天" + p;
+                }
+                
+                // 隨機決定是否顯示烏薩琪
+                const usagiImage = shouldShowUsagi() ? `<img src="./images/usagi.png" alt="Usagi" class="usagi-mini">` : '';
+
+                scrollContainer.innerHTML += `
+                    <div class="mini-card">
+                        <div class="mini-time">${p}</div>
+                        <div class="mini-icon">${getWeatherIcon(f.weather)}</div>
+                        <div class="mini-temp">${f.minTemp}° - ${f.maxTemp}°</div>
+                        <div style="font-size:0.9rem; color:var(--ac-dark); margin-top:5px; font-weight: bold;">💧${f.rain}%</div>
+                        ${usagiImage}
+                    </div>
+                `;
+            });
+
+            // 3. 右上角顯示今日日期
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const dayIndex = now.getDay();
+            const days = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+
+            document.getElementById('updateTime').textContent = `${month}/${date} ${days[dayIndex]}`;
+        }
+
+        async function fetchWeather() {
+            try {
+                const delayPromise = new Promise(resolve => setTimeout(resolve, 1500));
+                const fetchPromise = fetch(API_URL).then(res => res.json());
+                const [_, json] = await Promise.all([delayPromise, fetchPromise]);
+
+                if (json.success) {
+                    renderWeather(json.data);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('mainContent').style.display = 'block';
+                } else {
+                    throw new Error("API Error");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("天氣資料讀取失敗，可能是討伐魔物時網路線被剪斷了！");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchWeather);
+    </script>
+</body>
+
+</html>
